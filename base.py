@@ -6,13 +6,14 @@ Requires psycopg 2: http://initd.org/projects/psycopg2
 import sys
 
 from django.db import utils
-from django.db.backends import *
+from django.db.backends import (
+    BaseDatabaseFeatures, BaseDatabaseWrapper, BaseDatabaseValidation, settings)
 from django.db.backends.signals import connection_created
-from django.db.backends.postgresql_psycopg2.operations import DatabaseOperations
-from django.db.backends.postgresql_psycopg2.client import DatabaseClient
-from django.db.backends.postgresql_psycopg2.creation import DatabaseCreation
-from django.db.backends.postgresql_psycopg2.version import get_version
-from django.db.backends.postgresql_psycopg2.introspection import DatabaseIntrospection
+from .operations import DatabaseOperations
+from .client import DatabaseClient
+from .creation import DatabaseCreation
+from .version import get_version
+from .introspection import DatabaseIntrospection
 from django.utils.log import getLogger
 from django.utils.safestring import SafeUnicode, SafeString
 from django.utils.timezone import utc
@@ -112,7 +113,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         if autocommit:
             level = psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT
         else:
-            level = psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED
+            level = psycopg2.extensions.ISOLATION_LEVEL_SERIALIZABLE
         self._set_isolation_level(level)
         self.ops = DatabaseOperations(self)
         self.client = DatabaseClient(self)
@@ -205,7 +206,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         the same transaction is visible across all the queries.
         """
         if self.features.uses_autocommit and managed and not self.isolation_level:
-            self._set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED)
+            self._set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_SERIALIZABLE)
 
     def _leave_transaction_management(self, managed):
         """
